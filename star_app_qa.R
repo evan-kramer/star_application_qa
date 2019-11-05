@@ -26,17 +26,15 @@ for(ws in sort(unique(names_ws$`Primary UAT Analyst`))) {
     mutate_all("as.character") %>% 
     filter(`Primary UAT Sign-off` == "Error Found") %>% 
     bind_rows(., star_uat_errors)
-  Sys.sleep(6) # make the machine wait so it doesn't get throttled by the API for excessive requests
+  Sys.sleep(5) # make the machine wait so it doesn't get throttled by the API for excessive requests
 }
+star_uat_errors = mutate(star_uat_errors, Notes = ifelse(!is.na(Notes), Notes, X14)) %>% 
+  select(-X14, -ends_with("_1"))
 
-
-
-
-
-
-#   names() %>% 
-#   .['ws']
-#   # gs_read() %>% 
-#   View()
-# # gs_auth(new_user = T)
-# # n_ws
+# Add to Errors sheet
+gs_edit_cells(
+  gs_title("STAR Application UAT"),
+  ws = "Errors",
+  input = star_uat_errors,
+  trim = T
+)
