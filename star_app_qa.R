@@ -39,21 +39,15 @@ errors_sheet = mutate(star_uat_errors, Notes = ifelse(!is.na(Notes), Notes, X14)
   select(-X14, -ends_with("_1")) %>% 
   # Filter out flagged errors that appear to be rounding issues?
   # This method is more aggressive in flagging issues as rounding errors -- subsequently changed to less aggressive
-  # Fix this
-  filter(
-    !str_detect(Notes, "2019") & 
-      !(str_detect(Notes, as.character(0:9)) | str_detect(str_to_lower(Notes), "app ") | str_detect(str_to_lower(Notes), "round"))
-  ) %>% 
-  
-  
+  filter(!str_detect(str_to_lower(Notes), "round") & !str_detect(Notes, "2019")) %>%  
   arrange(`School Name`, `Framework (or Report Card)`, `Metric Name`, `Subgroup Name (Limited to STAR subgroups and All Report Card Students)`) %>% 
   # Join to existing Errors sheet (which contains categories of errors based on review)
   left_join(
     gs_read(gs_title("Report Card/STAR Application UAT"), ws = "Errors") %>% 
-      group_by(Notes) %>% 
+      group_by(`Metric Name`, Notes) %>% 
       summarize(`EK Notes` = first(`EK Notes`)) %>% 
       ungroup(),
-    by = "Notes"
+    by = c("Metric Name", "Notes")
   ) %>% 
   # Filter out any issues that have been resolved (i.e., have the same "Notes" as an issue that has been reviewed and marked "Resolved")
   filter(!`EK Notes` %in% c("Zero-rate suppression", "Resolved"))
