@@ -63,20 +63,6 @@ write_csv(
   na = ""
 )
 
-# Current status of error review
-
-  # summarize_all(n_distinct) %>% 
-  # summarize_all(first) %>% 
-  # .[, 1]
-
-# Crosswalk errors from `EK Notes` to see how many could be resolved
-
-
-
-break()
-
-
-
 # Extract errors from sheet before overwriting, just in case
 write_csv(
   gs_read(gs_title("Report Card/STAR Application UAT"), ws = "Errors"),
@@ -88,14 +74,40 @@ write_csv(
   na = ""
 )
 
-# Compare initial file with current errors
-anti_join(
-  star_uat_errors,
-  gs_read(gs_title("Report Card/STAR Application UAT"), ws = "Errors") %>% 
-    mutate_all("as.character") %>% 
-    select(-`EK Notes`),
-  by = names(star_uat_errors)
+# Add additional rows to bottom of Errors sheet
+gs_edit_cells(
+  ss = gs_title("Report Card/STAR Application UAT"),
+  ws = "Errors",
+  input = filter(errors_sheet, is.na(`EK Notes`)) %>% 
+    group_by(Notes) %>% 
+    summarize_all(first) %>% 
+    ungroup(),
+  anchor = str_c("A", gs_read(gs_title("Report Card/STAR Application UAT"), ws = "Errors") %>% nrow() + 1),
+  col_names = F,
 )
+
+# Summary? 
+group_by(errors_sheet, `EK Notes`) %>% 
+  summarize_all(n_distinct) %>% 
+  ungroup() %>% 
+  rename_all(funs(str_c("# Distinct ", .))) %>% 
+  filter(!is.na(`# Distinct EK Notes`)) %>% 
+  View()
+
+# Create Errors (All) sheet
+# Assign each one to one of the reviewers
+# Data validate (known/unknown)
+
+
+
+# Compare initial file with current errors
+# anti_join(
+#   star_uat_errors,
+#   gs_read(gs_title("Report Card/STAR Application UAT"), ws = "Errors") %>% 
+#     mutate_all("as.character") %>% 
+#     select(-`EK Notes`),
+#   by = names(star_uat_errors)
+# )
 
 # Add to Errors sheet -- takes forever
 # gs_edit_cells(
@@ -105,29 +117,26 @@ anti_join(
 #   trim = T
 # )
 
-break()
-
 # Alternative way to add an Errors sheet -- also takes forever
 # And how to make sure we don't overwrite existing data
-if("Errors" %in% gs_ws_ls(gs_title("STAR Application UAT"))) {
-  gs_ws_delete(gs_title("Report Card/STAR Application UAT"), ws = "Errors")
-}
-gs_ws_new(
-  gs_title("Report Card/STAR Application UAT"),
-  ws_title = "Errors",
-  row_extent = group_by(star_uat_errors, Notes) %>% 
-    summarize_all("first") %>% 
-    ungroup() %>% 
-    nrow(),
-  col_extent = ncol(star_uat_errors) + 1,
-  gs_edit_cells(
-    ss = gs_title("Report Card/STAR Application UAT"),
-    ws = "Errors",
-    input = group_by(star_uat_errors, Notes) %>% 
-      summarize_all("first") %>% 
-      ungroup() %>% 
-      mutate(`EK Notes` = NA)
-    # input = head(star_uat_errors, 200)
-  )
-)
-
+# if("Errors" %in% gs_ws_ls(gs_title("STAR Application UAT"))) {
+#   gs_ws_delete(gs_title("Report Card/STAR Application UAT"), ws = "Errors")
+# }
+# gs_ws_new(
+#   gs_title("Report Card/STAR Application UAT"),
+#   ws_title = "Errors",
+#   row_extent = group_by(star_uat_errors, Notes) %>% 
+#     summarize_all("first") %>% 
+#     ungroup() %>% 
+#     nrow(),
+#   col_extent = ncol(star_uat_errors) + 1,
+#   gs_edit_cells(
+#     ss = gs_title("Report Card/STAR Application UAT"),
+#     ws = "Errors",
+#     input = group_by(star_uat_errors, Notes) %>% 
+#       summarize_all("first") %>% 
+#       ungroup() %>% 
+#       mutate(`EK Notes` = NA)
+#     # input = head(star_uat_errors, 200)
+#   )
+# )
