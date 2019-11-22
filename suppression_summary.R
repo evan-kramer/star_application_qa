@@ -18,25 +18,27 @@ for(f in list.files()) {
     for(s in excel_sheets(f)) {
       temp = read_excel(f, sheet = s)
       if(max(str_detect(names(temp), "Student Group")) & max(str_detect(names(temp), "Score"))) {
-        # print(s)
-        summary = select(temp, `Student Group`, contains("Score")) %>% 
-          group_by(`Student Group`) %>% 
+        print(f); print(s)
+        summary = select(temp, `Student Group`, contains("Score"))
+        names(summary) = c("Student Group", "score")
+        group_by(summary, `Student Group`) %>% 
           summarize(
             file = f,
             sheet = s,
             n = n(),
-            n_na = sum(is.na(.[2])),
-            n_10 = sum(.[2] == "n<10", na.rm = T),
-            n_ds = sum(.[2] == "DS", na.rm = T)
-          ) %>% 
+            n_na = sum(is.na(score)),
+            n_10 = sum(score == "n<10", na.rm = T),
+            n_ds = sum(score == "DS", na.rm = T)
+          ) %>%
           bind_rows(summary, .)
       }
     } 
   }
 }
 
-mutate_at(
-  summary,
-  vars(n_na:n_ds),
-  funs(100 * . / n)
-)
+# mutate_at(
+#   summary,
+#   vars(n_na:n_ds),
+#   funs(100 * . / n)
+# ) %>% 
+#   View()
